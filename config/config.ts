@@ -63,69 +63,27 @@ export default defineConfig({
       ],
     },
     {
-      path: '/operator/:type/:direction/:fun',
+      path: '/operator/:platform/:symbol/:contractType',
       name: 'operator',
       icon: 'sliders',
-      component: './Operator',
+      component: './operator',
       routes: [
         {
-          path: '/operator/virtual/:direction/:fun',
+          path: '/operator/virtual/:symbol/:contractType',
           name: 'virtual',
+          component: './operator',
           routes: [
             {
-              path: '/operator/virtual/buy',
-              name: 'buy',
-              routes: [
-                {
-                  path: '/operator/virtual/buy/open',
-                  name: 'open',
-                  component: './Operator',
-                  hideInMenu: true,
-                },
-                {
-                  path: '/operator/virtual/buy/close',
-                  name: 'close',
-                  component: './Operator',
-                  hideInMenu: true,
-                },
-                {
-                  path: '/operator/virtual/buy/entrust',
-                  name: 'entrust',
-                  component: './Operator',
-                  hideInMenu: true,
-                }
-              ]
-            },
-            {
-              path: '/operator/virtual/sell',
-              name: 'sell',
-              routes: [
-                {
-                  path: '/operator/virtual/sell/open',
-                  name: 'open',
-                  component: './Operator',
-                  hideInMenu: true,
-                },
-                {
-                  path: '/operator/virtual/sell/close',
-                  name: 'close',
-                  component: './Operator',
-                  hideInMenu: true,
-                },
-                {
-                  path: '/operator/virtual/sell/entrust',
-                  name: 'entrust',
-                  component: './Operator',
-                  hideInMenu: true,
-                }
-              ]
+              path: '/operator/virtual/btc/:contractType',
+              name: 'btc',
+              hideInMenu: true
             }
           ]
         },
         {
-          path: '/operator/huobi',
+          path: '/operator/huobi/:symbol/:contractType',
           name: 'huobi',
-          component: './Operator',
+          component: './operator',
         },
       ],
     },
@@ -154,14 +112,14 @@ export default defineConfig({
       path: '/',
       redirect: '/dashboard/analysis',
     },
-    {
-      path: '/operator/virtual/buy',
-      redirect: '/operator/virtual/buy/open'
-    },
-    {
-      path: '/operator/virtual/sell',
-      redirect: '/operator/virtual/sell/open'
-    },
+    // {
+    //   path: '/operator/virtual/buy',
+    //   redirect: '/operator/virtual/buy/open'
+    // },
+    // {
+    //   path: '/operator/virtual/sell',
+    //   redirect: '/operator/virtual/sell/open'
+    // },
     {
       component: './404',
     },

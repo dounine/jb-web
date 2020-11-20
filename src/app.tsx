@@ -16,8 +16,8 @@ export async function getInitialState(): Promise<{
   // 如果是登录页面，不执行
   if (history.location.pathname !== '/user/login') {
     try {
-
       const currentUser = await queryCurrent();
+      console.log(currentUser);
       return {
         currentUser,
         settings: defaultSettings,
@@ -88,7 +88,7 @@ const errorHandler = (error: ResponseError) => {
 
   if (!response) {
     notification.error({
-      description: '您的网络发生异常，无法连接服务器',
+      description: '服务器连接发生异常、请稍后重试',
       message: '网络异常',
     });
   }
@@ -100,11 +100,9 @@ export const request: RequestConfig = {
   responseInterceptors: [
     async (response) => {
       let data = await response.clone().json();
-      if(!response.url.endsWith("/api/user/login")){
+      if (!response.url.endsWith("/user/login")) {
         if (data.status == "ok" && data.data) {
-          return new Promise((resolve) => resolve({
-            ...data.data
-          }))
+          return new Promise((resolve) => resolve(data.data))
         } else if (data.status == "fail") {
           notification.error({
             description: data.msg,
@@ -119,7 +117,7 @@ export const request: RequestConfig = {
     async (url, options) => {
       const headers = {
         ...options.headers,
-        'token': localStorage.getItem("token") || ""
+        'token': localStorage.getItem("token")?.slice(1, -1) || ""
       };
       return (
         {

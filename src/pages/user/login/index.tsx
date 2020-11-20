@@ -52,9 +52,9 @@ const Login: React.FC<{}> = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const { refresh } = useModel('@@initialState');
-  const [autoLogin, setAutoLogin] = useLocalStorageState('autoLogin',true);
+  const [autoLogin, setAutoLogin] = useLocalStorageState('autoLogin', true);
   const [type, setType] = useState<string>('account');
-  const [token, setToken] = useLocalStorageState('token','');
+  const [token, setToken] = useLocalStorageState('token', '');
 
   const handleSubmit = async (values: LoginParamsType) => {
     setSubmitting(true);
@@ -63,7 +63,6 @@ const Login: React.FC<{}> = () => {
       const msg = await fakeAccountLogin({ ...values, type });
 
       if (msg.status === 'ok') {
-        
         setToken(msg.data?.token)
         message.success('登录成功！');
         replaceGoto();
@@ -71,16 +70,17 @@ const Login: React.FC<{}> = () => {
           refresh();
         }, 0);
         return;
+      } else {
+        // 如果失败去设置用户错误信息
+        setUserLoginState({ ...msg, type });
       }
-      // 如果失败去设置用户错误信息
-      setUserLoginState(msg);
     } catch (error) {
       message.error('登录失败，请重试！');
     }
     setSubmitting(false);
   };
 
-  const { status, type: loginType } = userLoginState;
+  const { status, msg, type: loginType } = userLoginState;
 
   return (
     <div className={styles.container}>
@@ -101,8 +101,8 @@ const Login: React.FC<{}> = () => {
         <div className={styles.main}>
           <LoginFrom activeKey={type} onTabChange={setType} onSubmit={handleSubmit}>
             <Tab key="account" tab="账户密码登录">
-              {status === 'error' && loginType === 'account' && !submitting && (
-                <LoginMessage content="账户或密码错误（admin/ant.design）" />
+              {status === 'fail' && loginType === 'account' && !submitting && (
+                <LoginMessage content={msg} />
               )}
 
               <Username

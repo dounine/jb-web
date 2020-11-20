@@ -32,7 +32,6 @@ export default {
     //   });
     //   return;
     // }
-    console.log(req.headers);
     if (req.headers.token && req.headers.token !== "") {
       res.send({
         status: "ok",
@@ -76,6 +75,17 @@ export default {
   ],
   'POST /api/user/login': (req: Request, res: Response) => {
     const { password, username, type } = req.body;
+    if(password && username){
+      res.send({
+        status: 'ok',
+        type,
+        data:{
+          token:'hello'
+        }
+      });
+      access = 'admin';
+      return;
+    }
     if (password === 'admin' && username === 'admin') {
       res.send({
         status: 'ok',
