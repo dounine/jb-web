@@ -63,25 +63,25 @@ export default defineConfig({
       ],
     },
     {
-      path: '/operator/:platform/:symbol/:contractType',
+      path: '/operator/:platform/:symbol/:contractType/:direction',
       name: 'operator',
       icon: 'sliders',
       component: './operator',
       routes: [
         {
-          path: '/operator/virtual/:symbol/:contractType',
+          path: '/operator/virtual/:symbol/:contractType/:direction',
           name: 'virtual',
           component: './operator',
           routes: [
             {
-              path: '/operator/virtual/btc/:contractType',
+              path: '/operator/virtual/btc/:contractType/:direction',
               name: 'btc',
               hideInMenu: true
             }
           ]
         },
         {
-          path: '/operator/huobi/:symbol/:contractType',
+          path: '/operator/huobi/:symbol/:contractType/:direction',
           name: 'huobi',
           component: './operator',
         },

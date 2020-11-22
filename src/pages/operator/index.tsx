@@ -31,10 +31,10 @@ const TableList: React.FC<{}> = (props) => {
       }).catch(error => {
         setLoading(false);
       });
-  }, [params.platform, params.symbol, params.contractType]);
+  }, [params.platform, params.symbol, params.contractType, params.direction]);
 
   const contractTypeOnChange = (e) => {
-    props.history.push('/operator/' + params.platform + '/' + params.symbol + '/' + e.target.value, { record: props.location.state.record });
+    props.history.push(`/operator/${params.platform}/${params.symbol}/${e.target.value}/${params.direction}`, { record: props.location.state.record });
   }
 
   const action = (
@@ -125,7 +125,7 @@ const TableList: React.FC<{}> = (props) => {
         if (record.status == 'enable') {
           return (
             <Space size="middle">
-              <Link to={{ pathname: `/operator/${params.platform}/${record.name}/${record.contractTypes[0]}`, state: { record } }}>Operator</Link>
+              <Link to={{ pathname: `/operator/${params.platform}/${record.name}/${record.contractTypes[0]}/buy`, state: { record } }}>Operator</Link>
             </Space>
           );
         }
@@ -134,6 +134,10 @@ const TableList: React.FC<{}> = (props) => {
     },
   ];
 
+  const onTabChange = (tabActiveKey: string) => {
+    props.history.push(`/operator/${params.platform}/${params.symbol}/${params.contractType}/${tabActiveKey}`, { record: props.location.state.record });
+  };
+
   return (
     params.symbol == ":symbol" ? <PageContainer>
       <Table<API.Position> loading={loading} columns={columns} dataSource={positions} />
@@ -141,6 +145,8 @@ const TableList: React.FC<{}> = (props) => {
       title={params.symbol.toUpperCase()}
       extra={action}
       className={styles.pageHeader}
+      tabActiveKey={params.direction}
+      onTabChange={onTabChange}
       tabList={[
         {
           key: 'buy',
