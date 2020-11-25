@@ -112,14 +112,6 @@ export default defineConfig({
       path: '/',
       redirect: '/dashboard/analysis',
     },
-    // {
-    //   path: '/operator/virtual/buy',
-    //   redirect: '/operator/virtual/buy/open'
-    // },
-    // {
-    //   path: '/operator/virtual/sell',
-    //   redirect: '/operator/virtual/sell/open'
-    // },
     {
       component: './404',
     },
