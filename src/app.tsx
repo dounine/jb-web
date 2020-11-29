@@ -20,6 +20,7 @@ export async function getInitialState(): Promise<{
       console.log(currentUser);
       return {
         currentUser,
+        token: localStorage.getItem("token")?.slice(1, -1) || "",
         settings: defaultSettings,
       };
     } catch (error) {

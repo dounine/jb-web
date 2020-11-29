@@ -5,21 +5,21 @@ export default {
       data: [
         {
           key: '1',
-          name: 'btc',
+          name: 'BTC',
           status: 'enable',
           directions: ['buy', 'sell'],
           contractTypes: ['quarter', 'next_quarter', 'this_week', 'next_week']
         },
         {
           key: '2',
-          name: 'eth',
+          name: 'ETH',
           status: 'enable',
           directions: ['buy', 'sell'],
           contractTypes: ['quarter', 'next_quarter', 'this_week', 'next_week']
         },
         {
           key: '3',
-          name: 'etc',
+          name: 'ETC',
           status: 'disable',
           directions: ['buy', 'sell'],
           contractTypes: ['quarter', 'next_quarter', 'this_week', 'next_week']

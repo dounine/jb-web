@@ -9,36 +9,145 @@ import { GridContent, PageContainer, FooterToolbar, RouteContext } from '@ant-de
 import { useModel, Link } from 'umi';
 import { ColumnsType } from 'antd/es/table';
 import { Table, Tag, Space, Button, Radio, Dropdown, Menu } from 'antd';
-import { Card, Popover, Tabs, Row, Col, Divider, Badge, Switch, Typography, Slider } from 'antd';
-import { SettingOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { Card, Popover, Tabs, Row, Col, Divider, Badge, Switch, Typography, Slider, notification, Spin } from 'antd';
+import { SettingOutlined, QuestionCircleOutlined, LoadingOutlined } from '@ant-design/icons';
 const { TabPane } = Tabs;
 const { Title, Paragraph, Text } = Typography;
 import { queryPosition } from './service';
+import Queue from '../../components/Queue/index.d.ts';
 import styles from './style.less';
 const ButtonGroup = Button.Group;
 
-
-
+var socket: any = null;
+const messageQueue = new Queue<any>();
 const TableList: React.FC<{}> = (props) => {
 
   const params = props.match.params;
   const { initialState } = useModel('@@initialState');
   const [loading, setLoading] = useState<boolean>(true);
+  const [connect, setConnect] = useState<boolean>(false);
   const [positions, setPositions] = useState<API.Position[]>([]);
+
+  const websocketConnect = () => {
+    if (socket == null) {
+      socket = new WebSocket(`ws://30000.codeserver.61week.com/ws/${initialState.token}`);
+      socket.onopen = () => {
+        console.log('socket opened');
+      }
+      socket.onclose = () => {
+        console.log('socket closed');
+      }
+      socket.onmessage = (target) => {
+        const data = JSON.parse(target.data);
+        if (data.type === 'login' && data.msg === 'ok') {
+          setConnect(true);
+          for (var i: number = 0; i < messageQueue.size(); i++) {
+            let msg = messageQueue.pop();
+            console.log(msg)
+            socket.send(JSON.stringify(msg));
+          }
+        } else if (data.type === "ping") {
+
+        } else {
+          console.log(new Date(), data);
+        }
+      }
+    }
+  }
+
+  const sendMessage = (data: object) => {
+    console.log('发送消息', data);
+    if (connect) {
+      socket.send(JSON.stringify(data));
+    } else {
+      console.log('保存起来了');
+      messageQueue.push(data);
+    }
+  }
 
   useEffect(() => {
     setLoading(true);
     queryPosition(params.platform)
       .then(data => {
+        websocketConnect();
         setPositions(data);
         setLoading(false);
+        if (params.symbol != ":symbol" && params.contractType != ":contractType" && params.direction != ":direction" && params.offset != ":offset") {
+          sendMessage({
+            type: "sub",
+            data: {
+              type: "upDown",
+              channel: {
+                symbol: params.symbol,
+                contractType: params.contractType,
+                direction: params.direction,
+                platform: params.platform,
+                offset: params.offset
+              }
+            }
+          })
+        }
+        console.log(params);
       }).catch(error => {
         setLoading(false);
       });
-  }, [params.platform, params.symbol, params.contractType, params.direction]);
+  }, [params.platform]);
 
-  const contractTypeOnChange = (e) => {
-    props.history.push(`/operator/${params.platform}/${params.symbol}/${e.target.value}/${params.direction}/${params.type}`, { record: props.location.state.record });
+  const symbolOnChange = (record) => {
+    sendMessage({
+      type: "sub",
+      data: {
+        type: "upDown",
+        channel: {
+          symbol: params.symbol,
+          contractType: record.contractTypes[0],
+          direction: 'buy',
+          platform: params.platform,
+          offset: 'open'
+        }
+      }
+    });
+    props.history.push(`/operator/${params.platform}/${record.name}/${record.contractTypes[0]}/buy/open`, { record: record });
+  }
+
+  const contractTypeOnChange = (key) => {
+    sendMessage({
+      type: "sub",
+      data: {
+        type: "upDown",
+        channel: {
+          symbol: params.symbol,
+          contractType: key,
+          direction: params.direction,
+          platform: params.platform,
+          offset: params.offset
+        }
+      }
+    });
+    props.history.push(`/operator/${params.platform}/${params.symbol}/${key}/${params.direction}/${params.offset}`, { record: props.location.state.record });
+  }
+
+  const directionOnChange = (key) => {
+    props.history.push(`/operator/${params.platform}/${params.symbol}/${params.contractType}/${key}/${params.offset}`, { record: props.location.state.record });
+  }
+
+  const offsetOnChange = (key) => {
+    if (key === "open" || key === "close") {
+      sendMessage({
+        type: "sub",
+        data: {
+          type: "upDown",
+          channel: {
+            symbol: params.symbol,
+            contractType: params.contractType,
+            direction: params.direction,
+            platform: params.platform,
+            offset: key
+          }
+        }
+      });
+    }
+    props.history.push(`/operator/${params.platform}/${params.symbol}/${params.contractType}/${params.direction}/${key}`, { record: props.location.state.record });
   }
 
   const action = (
@@ -69,7 +178,7 @@ const TableList: React.FC<{}> = (props) => {
         }
         return (
           <Fragment>
-            <Radio.Group value={params.contractType} onChange={contractTypeOnChange}>
+            <Radio.Group value={params.contractType} onChange={(e) => contractTypeOnChange(e.target.value)}>
               {
                 props.location.state.record.contractTypes.map(ct => {
                   return (
@@ -129,7 +238,8 @@ const TableList: React.FC<{}> = (props) => {
         if (record.status == 'enable') {
           return (
             <Space size="middle">
-              <Link to={{ pathname: `/operator/${params.platform}/${record.name}/${record.contractTypes[0]}/buy/open`, state: { record } }}>Operator</Link>
+              {/* <Link to={{ pathname: `/operator/${params.platform}/${record.name}/${record.contractTypes[0]}/buy/open`, state: { record } }}>Operator</Link> */}
+              <a onClick={() => symbolOnChange(record)}>Operator</a>
             </Space>
           );
         }
@@ -169,17 +279,22 @@ const TableList: React.FC<{}> = (props) => {
     </div>
   );
 
+  const description = (
+    <div>
+      {!connect && <div><Spin /> 连接中...</div>}
+    </div>
+  );
+
   return (
     params.symbol == ":symbol" ? <PageContainer>
       <Table<API.Position> loading={loading} columns={columns} dataSource={positions} />
     </PageContainer> : <PageContainer
-      title={params.symbol.toUpperCase()}
+      title={params.symbol}
       extra={action}
       className={styles.pageHeader}
       tabActiveKey={params.direction}
-      onTabChange={(key) => {
-        props.history.push(`/operator/${params.platform}/${params.symbol}/${params.contractType}/${key}/${params.type}`, { record: props.location.state.record });
-      }}
+      onTabChange={directionOnChange}
+      content={description}
       tabList={[
         {
           key: 'buy',
@@ -192,9 +307,7 @@ const TableList: React.FC<{}> = (props) => {
       ]}
     >
         <Tabs
-          defaultActiveKey={params.type} onChange={(key) => {
-            props.history.push(`/operator/${params.platform}/${params.symbol}/${params.contractType}/${params.direction}/${key}`, { record: props.location.state.record });
-          }}>
+          defaultActiveKey={params.offset} onChange={offsetOnChange}>
           <TabPane
             tab="Open"
             key="open"
