@@ -11,6 +11,7 @@ import { ColumnsType } from 'antd/es/table';
 import { Table, Tag, Space, Button, Radio, Dropdown, Menu } from 'antd';
 import { Card, Popover, Tabs, Row, Col, Divider, Badge, Switch, Typography, Slider, notification, Spin } from 'antd';
 import { SettingOutlined, QuestionCircleOutlined, LoadingOutlined } from '@ant-design/icons';
+import { useLocalStorageState } from '@umijs/hooks';
 const { TabPane } = Tabs;
 const { Title, Paragraph, Text } = Typography;
 import { queryPosition } from './service';
@@ -27,10 +28,18 @@ const TableList: React.FC<{}> = (props) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [connect, setConnect] = useState<boolean>(false);
   const [positions, setPositions] = useState<API.Position[]>([]);
+  const [symbolRecord, setSymbolRecord] = useLocalStorageState('symbolRecord', {});
+  const [sliderValue, setSliderValue] = useState<[number, number]>([0, 0]);
+
+  const switchRecord = () => {
+    return props.location.state?.record ?? symbolRecord
+  }
 
   const websocketConnect = () => {
     if (socket == null) {
-      socket = new WebSocket(`ws://30000.codeserver.61week.com/ws/${initialState.token}`);
+      console.log(initialState.token);
+
+      socket = new WebSocket(`ws://localhost:40000/ws/${initialState.token}`);
       socket.onopen = () => {
         console.log('socket opened');
       }
@@ -49,8 +58,22 @@ const TableList: React.FC<{}> = (props) => {
         } else if (data.type === "ping") {
 
         } else {
+          if (data.type === 'slider') {
+            sliderOnMessage(data);
+          }
           console.log(new Date(), data);
         }
+      }
+    }
+  }
+
+  const sliderOnMessage = (body) => {
+    let data = body.data;
+    if (data.tradeValue && data.tradeValue >= 0) {
+      if (sliderValue[0] === 0) {
+        setSliderValue([data.tradeValue - 10, data.tradeValue])
+      } else {
+        setSliderValue([sliderValue[0], data.tradeValue])
       }
     }
   }
@@ -107,6 +130,7 @@ const TableList: React.FC<{}> = (props) => {
         }
       }
     });
+    setSymbolRecord(record);
     props.history.push(`/operator/${params.platform}/${record.name}/${record.contractTypes[0]}/buy/open`, { record: record });
   }
 
@@ -124,11 +148,11 @@ const TableList: React.FC<{}> = (props) => {
         }
       }
     });
-    props.history.push(`/operator/${params.platform}/${params.symbol}/${key}/${params.direction}/${params.offset}`, { record: props.location.state.record });
+    props.history.push(`/operator/${params.platform}/${params.symbol}/${key}/${params.direction}/${params.offset}`, { record: switchRecord() });
   }
 
   const directionOnChange = (key) => {
-    props.history.push(`/operator/${params.platform}/${params.symbol}/${params.contractType}/${key}/${params.offset}`, { record: props.location.state.record });
+    props.history.push(`/operator/${params.platform}/${params.symbol}/${params.contractType}/${key}/${params.offset}`, { record: switchRecord() });
   }
 
   const offsetOnChange = (key) => {
@@ -147,7 +171,7 @@ const TableList: React.FC<{}> = (props) => {
         }
       });
     }
-    props.history.push(`/operator/${params.platform}/${params.symbol}/${params.contractType}/${params.direction}/${key}`, { record: props.location.state.record });
+    props.history.push(`/operator/${params.platform}/${params.symbol}/${params.contractType}/${params.direction}/${key}`, { record: switchRecord() });
   }
 
   const action = (
@@ -157,7 +181,7 @@ const TableList: React.FC<{}> = (props) => {
           let mobileMenu = (
             <Menu>
               {
-                props.location.state.record.contractTypes.map(contractType => {
+                switchRecord().contractTypes.map(contractType => {
                   return (
                     <Menu.Item key={contractType}>{contractType}</Menu.Item>
                   );
@@ -180,7 +204,7 @@ const TableList: React.FC<{}> = (props) => {
           <Fragment>
             <Radio.Group value={params.contractType} onChange={(e) => contractTypeOnChange(e.target.value)}>
               {
-                props.location.state.record.contractTypes.map(ct => {
+                switchRecord().contractTypes.map(ct => {
                   return (
                     <Radio.Button key={ct} value={ct}>{ct}</Radio.Button>
                   );
@@ -285,6 +309,19 @@ const TableList: React.FC<{}> = (props) => {
     </div>
   );
 
+  const sliderMarks = {
+    0: '0',
+    25: '25',
+    50: '50',
+    75: '75',
+    100: {
+      style: {
+        color: '#f50',
+      },
+      label: <strong>100</strong>,
+    },
+  };
+
   return (
     params.symbol == ":symbol" ? <PageContainer>
       <Table<API.Position> loading={loading} columns={columns} dataSource={positions} />
@@ -331,7 +368,9 @@ const TableList: React.FC<{}> = (props) => {
                 </Row>
                 <Slider onChange={(value) => {
                   console.log(value);
-                }} range marks={marks} defaultValue={[26, 37]} />
+                }} range marks={sliderMarks} tipFormatter={(value) =>{
+                return <div></div>
+                }} tooltipVisible={false} disabled={true} step={0.1} value={sliderValue} />
               </Typography.Text>
               <Typography.Text strong>
                 Rebound{' '}
