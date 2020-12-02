@@ -75,36 +75,14 @@ export default {
   ],
   'POST /api/user/login': (req: Request, res: Response) => {
     const { password, username, type } = req.body;
-    if(password && username){
-      res.send({
-        status: 'ok',
-        type,
-        data:{
-          token:'hello'
-        }
-      });
-      access = 'admin';
-      return;
-    }
     if (password === 'admin' && username === 'admin') {
       res.send({
         status: 'ok',
         type,
-        data:{
-          token:'hello'
+        data: {
+          token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MzI3MjU2ODIsImlhdCI6MTYwNjgwNTY4MiwicGhvbmUiOiIxMzUzNTAzMjkzNiJ9.BY-dsK8YFIofIDah7qufUJJKlPyfSdhzt4cBmRx1CCo'
         }
       });
-      // res.send({
-      //   status: "ok",
-      //   data: {
-      //     name: '13535032936',
-      //     avatar: 'https://gw.alipayobjects.com/zos/antfincdn/XAosXuNZyF/BiazfanxmamNRoxxVxka.png',
-      //     userid: '13535032936',
-      //     email: 'antdesign@alipay.com',
-      //     access: 'admin',
-      //     phone: '13535032936',
-      //   }
-      // });
       access = 'admin';
       return;
     }
