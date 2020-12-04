@@ -29,7 +29,10 @@ const TableList: React.FC<{}> = (props) => {
   const [connect, setConnect] = useState<boolean>(false);
   const [positions, setPositions] = useState<API.Position[]>([]);
   const [symbolRecord, setSymbolRecord] = useLocalStorageState('symbolRecord', {});
-  const [sliderValue, setSliderValue] = useState<[number, number]>([0, 0]);
+  const [sliderTradeValue, setSliderTradeValue] = useState<number>(0);
+  const [sliderEntrustValue, setSliderEntrustValue] = useState<number>(0);
+  const [sliderEnable, setSliderEnable] = useState<boolean>(true);
+
 
   const switchRecord = () => {
     return props.location.state?.record ?? symbolRecord
@@ -37,8 +40,6 @@ const TableList: React.FC<{}> = (props) => {
 
   const websocketConnect = () => {
     if (socket == null) {
-      console.log(initialState.token);
-
       socket = new WebSocket(`ws://localhost:40000/ws/${initialState.token}`);
       socket.onopen = () => {
         console.log('socket opened');
@@ -48,34 +49,42 @@ const TableList: React.FC<{}> = (props) => {
       }
       socket.onmessage = (target) => {
         const data = JSON.parse(target.data);
-        if (data.type === 'login' && data.msg === 'ok') {
+        if (data.type == 'login' && data.msg == 'ok') {
           setConnect(true);
           for (var i: number = 0; i < messageQueue.size(); i++) {
             let msg = messageQueue.pop();
-            console.log(msg)
             socket.send(JSON.stringify(msg));
           }
-        } else if (data.type === "ping") {
+        } else if (data.type == "ping") {
 
         } else {
-          if (data.type === 'slider') {
+          if (data.type == 'slider') {
             sliderOnMessage(data);
+          } else {
+            console.log(data);
           }
-          console.log(new Date(), data);
         }
       }
     }
   }
 
+
   const sliderOnMessage = (body) => {
+    console.log(body.data);
     let data = body.data;
-    if (data.tradeValue && data.tradeValue >= 0) {
-      if (sliderValue[0] === 0) {
-        setSliderValue([data.tradeValue - 10, data.tradeValue])
+    if (params.direction == "sell") {
+      if (data.tradeValue != undefined) {
+        setSliderTradeValue(data.tradeValue)
+      } else if (data.entrustValue != undefined) {
+        setSliderEntrustValue(data.entrustValue)
       } else {
-        setSliderValue([sliderValue[0], data.tradeValue])
+
       }
+    } else {
+
     }
+
+
   }
 
   const sendMessage = (data: object) => {
@@ -322,6 +331,16 @@ const TableList: React.FC<{}> = (props) => {
     },
   };
 
+  const filterSliderData = () => {
+    if (sliderTradeValue != 0 && sliderEntrustValue != 0) {
+      return [sliderEntrustValue, sliderTradeValue];
+    } else if (sliderTradeValue != 0) {
+      return [sliderTradeValue];
+    } else if (sliderEntrustValue != 0) {
+      return [sliderEntrustValue];
+    }
+  }
+
   return (
     params.symbol == ":symbol" ? <PageContainer>
       <Table<API.Position> loading={loading} columns={columns} dataSource={positions} />
@@ -368,9 +387,9 @@ const TableList: React.FC<{}> = (props) => {
                 </Row>
                 <Slider onChange={(value) => {
                   console.log(value);
-                }} range marks={sliderMarks} tipFormatter={(value) =>{
-                return <div></div>
-                }} tooltipVisible={false} disabled={true} step={0.1} value={sliderValue} />
+                }} range marks={sliderMarks} tipFormatter={(value) => {
+                  return <div></div>
+                }} tooltipVisible={false} disabled={!sliderEnable} step={0.1} value={filterSliderData()} />
               </Typography.Text>
               <Typography.Text strong>
                 Rebound{' '}
